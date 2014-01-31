@@ -76,9 +76,26 @@ end
 
 c = -ones(size(x0));
 
+fprintf(1, 'Setup time: %f  s\n', toc);
+tic
 x = bintprog(c, A, b, Aeq, beq, x0);
+fprintf(1, 'bintprog solve time: %f s\n', toc);
 
-x = reshape(x, size(grid))
-toc
+clear model params
+model.obj = c;
+model.A = sparse([A; Aeq]);
+model.rhs = [b; beq];
+model.sense = [repmat('<', size(A, 1), 1); repmat('=', size(Aeq, 1), 1)];
+model.vtype = 'B';
+params.outputflag = 0;
+
+tic
+result = gurobi(model, params);
+fprintf(1, 'gurobi solve time: %f s\n', toc);
+
+
+x = reshape(result.x, size(grid));
+
+
 % profile viewer
         
