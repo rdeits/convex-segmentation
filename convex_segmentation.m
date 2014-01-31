@@ -17,6 +17,7 @@ function x = convex_segmentation(grid)
 %      1, 1, 1, 1]
 
 grid
+grid_flat = reshape(grid, [], 1);
 assert(size(grid,1) == size(grid,2))
 n = size(grid,1);
 
@@ -32,10 +33,16 @@ R = rotmat(pi/2);
 for r1 = 1:n
   for c1 = 1:n
     x1_ndx = (c1-1)*n + r1;
+    if ~grid_flat(x1_ndx)
+      continue
+    end
     for r2 = 1:n
       for c2 = 1:n
         x2_ndx = (c2-1)*n + r2;
         if x2_ndx <= x1_ndx
+          continue
+        end
+        if ~grid_flat(x2_ndx)
           continue
         end
         a = R * [r2-r1; c2-c1];
@@ -65,28 +72,34 @@ end
 A = double(A(1:(con_ndx-1), :));
 b = b(1:(con_ndx-1));
 
-Aeq = sparse(zeros(length(x0), length(x0)));
-beq = zeros(size(Aeq, 1), 1);
-grid_flat = reshape(grid, [], 1);
+% Aeq = sparse(zeros(length(x0), length(x0)));
+% beq = zeros(size(Aeq, 1), 1);
+lb = zeros(length(x0), 1);
+ub = ones(length(x0), 1);
 for j = 1:length(x0)
   if ~grid_flat(j)
-    Aeq(j, j) = 1;
+    ub(j) = 0;
+%     Aeq(j, j) = 1;
   end
 end
+
 
 c = -ones(size(x0));
 
 fprintf(1, 'Setup time: %f  s\n', toc);
-tic
-x = bintprog(c, A, b, Aeq, beq, x0);
-fprintf(1, 'bintprog solve time: %f s\n', toc);
+% tic
+% x = bintprog(c, A, b, Aeq, beq, x0);
+% fprintf(1, 'bintprog solve time: %f s\n', toc);
 
 clear model params
 model.obj = c;
-model.A = sparse([A; Aeq]);
-model.rhs = [b; beq];
-model.sense = [repmat('<', size(A, 1), 1); repmat('=', size(Aeq, 1), 1)];
+model.A = A;
+model.rhs = b;
+model.ub = ub;
+model.lb = lb;
+model.sense = '<';
 model.vtype = 'B';
+model.start = x0;
 params.outputflag = 0;
 
 tic
