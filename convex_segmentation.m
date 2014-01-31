@@ -35,6 +35,9 @@ for r1 = 1:n
     for r2 = 1:n
       for c2 = 1:n
         x2_ndx = (c2-1)*n + r2;
+        if x2_ndx <= x1_ndx
+          continue
+        end
         a = R * [r2-r1; c2-c1];
         a = a / norm(a);
         b12 = a' * [r1;c1];
