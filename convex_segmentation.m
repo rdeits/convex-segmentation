@@ -51,9 +51,6 @@ for r1 = 1:n
             end
             b3 = a' * [r3;c3];
             if abs(b3 - b12) < 1/(sqrt(2) + 1e-3)
-              if x3_ndx == 1
-                disp('here')
-              end
               A(con_ndx, [x1_ndx, x2_ndx, x3_ndx]) = [1, 1, -1];
               b(con_ndx) = 1.5;
               con_ndx = con_ndx + 1;
