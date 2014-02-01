@@ -24,13 +24,12 @@ n = size(grid,1);
 tic
 % profile on
 x0 = zeros(n^2, 1);
-A = sparse(zeros(length(x0)^3, length(x0)));
+nv = length(x0);
+s0 = zeros(nv^2, 1);
+ns = length(s0);
+A = sparse(zeros(nv^2 + ns, nv + ns));
 b = zeros(size(A, 1), 1);
-con_ndx = 1;
 
-
-R = rotmat(pi/2);
-eps = 1/sqrt(2) + 1e-3;
 for r1 = 1:n
   for c1 = 1:n
     x1_ndx = (c1-1)*n + r1;
@@ -47,52 +46,30 @@ for r1 = 1:n
           continue
         end
         [r3s, c3s] = bresenham(r1, c1, r2, c2);
-        for j = 2:(length(r3s)-1)
-          r3 = r3s(j);
-          c3 = c3s(j);
-          x3_ndx = (c3-1)*n + r3;
-          A(con_ndx, [x1_ndx, x2_ndx, x3_ndx]) = [1, 1, -1];
+        if length(r3s) > 2
+          s_ndx = nv*(x1_ndx-1) + x2_ndx;
+          con_ndx = s_ndx;
+          A(con_ndx, [x1_ndx, x2_ndx, nv+s_ndx]) = [1, 1, -1];
           b(con_ndx) = 1.5;
-          con_ndx = con_ndx + 1;
-          fprintf(1, '%d and %d constrain %d\n', x1_ndx, x2_ndx, x3_ndx);
+          
+          x3_ndxs = (c3s-1)*n + r3s;
+          x3_ndxs = x3_ndxs(2:end-1);
+          N = length(x3_ndxs);
+          con_ndx = ns + s_ndx;
+          A(con_ndx, [nv+s_ndx, x3_ndxs']) = [N, -ones(size(x3_ndxs'))];
+          b(con_ndx) = 0;
         end
-        
-%         a = R * [r2-r1; c2-c1];
-%         a = a / norm(a);
-%         b12 = a' * [r1;c1];
-%         for r3 = min([r1,r2]):max([r1,r2])
-%           for c3 = min([c1,c2]):max([c1,c2])
-%             x3_ndx = (c3-1)*n + r3;
-%             if r3 == r1 && c3 == c1
-%               continue
-%             elseif r3 == r2 && c3 == c2
-%               continue
-%             end
-%             b3 = a' * [r3;c3];
-%             if abs(b3 - b12) < eps
-%               A(con_ndx, [x1_ndx, x2_ndx, x3_ndx]) = [1, 1, -1];
-%               b(con_ndx) = 1.5;
-%               con_ndx = con_ndx + 1;
-% %               fprintf(1, '%d and %d constrain %d\n', x1_ndx, x2_ndx, x3_ndx);
-%             end
-%           end
-%         end
       end
     end
   end
 end
-A = double(A(1:(con_ndx-1), :));
-b = b(1:(con_ndx-1));
 fprintf(1, 'Setup time: %f  s\n', toc);
-
-% Aeq = sparse(zeros(length(x0), length(x0)));
-% beq = zeros(size(Aeq, 1), 1);
 hulls = {};
 
 while true
-  lb = zeros(length(x0), 1);
-  ub = ones(length(x0), 1);
-  for j = 1:length(x0)
+  lb = zeros(nv + ns, 1);
+  ub = ones(size(lb));
+  for j = 1:nv
     if ~grid_flat(j)
       ub(j) = 0;
   %     Aeq(j, j) = 1;
@@ -100,7 +77,7 @@ while true
   end
 
 
-  c = -ones(size(x0));
+  c = [-ones(nv, 1); zeros(ns, 1)];
 
   % tic
   % x = bintprog(c, A, b, Aeq, beq, x0);
@@ -114,30 +91,47 @@ while true
   model.lb = lb;
   model.sense = '<';
   model.vtype = 'B';
-  model.start = x0;
+  model.start = [x0; s0];
   params.outputflag = 0;
 
   tic
   result = gurobi(model, params);
   fprintf(1, 'gurobi solve time: %f s\n', toc);
 
-
-  x = reshape(result.x, size(grid))
+%   xstar = result.x(1:nv);
+%   sstar = result.x(nv+1:nv+ns);
+%   sstar = reshape(sstar, nv, nv);
+%   for j = 1:nv
+%     for k = 1:nv
+%       assert(sstar(j, k) == xstar(j) * xstar(k));
+%     end
+%   end
+  
+  x = reshape(result.x(1:nv), size(grid))
   hulls{end+1} = x;
   grid_flat(logical(x)) = 0;
   if all(grid_flat == 0)
     break
   end
 end
-% 
-% figure();
-% cmap = colormap('jet');
-% for j = 1:length(hulls)
-%   h = imshow(hulls{j}+1, [0,0,0; cmap(round((j-1) * (size(cmap, 1) / length(hulls))+1),:)]);
-%   alphadata = hulls{j};
-%   set(h, 'AlphaData', alphadata);
-%   hold on
-% end
+
+img = zeros([size(grid), 3]);
+figure(1);
+cmap = colormap('jet');
+for j = 1:length(hulls)
+  for i = 1:size(hulls{j}, 1)
+    for k = 1:size(hulls{j}, 2)
+      if hulls{j}(i, k)
+        img(i, k, :) = cmap(round((j-1) * (size(cmap, 1) / length(hulls))+1), :);
+      end
+    end
+  end
+end
+figure(1)
+subplot(211)
+h1 = imshow(imresize(grid, 10, 'nearest'));
+subplot(212)
+h2 = imshow(imresize(img, 10, 'nearest'));
 
 
 % profile viewer
