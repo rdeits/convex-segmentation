@@ -1,20 +1,24 @@
-function x = convex_segmentation(grid)
+function hulls = convex_segmentation(grid)
 %% Convex Segmentation
-% Given a binary image stored in [grid], return a binary image
-% corresponding to the largest convex region of true values
-% in the input image. 
+% Given a binary image stored in [grid], return a cell array
+% of binary images of convex regions of ones in the input, 
+% sorted by descending area. 
 
 % For example, running on this input:
 % grid = [1, 0, 0, 0;
 %         1, 0, 1, 0;
 %         1, 1, 1, 0;
 %         1, 1, 1, 1];
-% 
-% produces the following mask:
-% x = [0, 0, 0, 0;
-%      0, 0, 0, 0;
-%      1, 1, 1, 0;
-%      1, 1, 1, 1]
+%
+% produces the following masks:
+% hulls{1} = [0, 0, 0, 0;
+%             0, 0, 1, 0;
+%             1, 1, 1, 0;
+%             1, 1, 1, 1]
+% hulls{2} = [1, 0, 0, 0;
+%             1, 0, 0, 0;
+%             0, 0, 0, 0;
+%             0, 0, 0, 0]
 
 grid
 grid_flat = reshape(grid, [], 1);
@@ -22,14 +26,14 @@ assert(size(grid,1) == size(grid,2))
 n = size(grid,1);
 
 tic
-% profile on
 x0 = zeros(n^2, 1);
 nv = length(x0);
 s0 = zeros(nv^2, 1);
 ns = length(s0);
-A = sparse(zeros(nv^2 + ns, nv + ns));
+A = sparse(nv^2 + ns, nv + ns);
 b = zeros(size(A, 1), 1);
 
+con_ndx = 1;
 for r1 = 1:n
   for c1 = 1:n
     x1_ndx = (c1-1)*n + r1;
@@ -48,40 +52,30 @@ for r1 = 1:n
         [r3s, c3s] = bresenham(r1, c1, r2, c2);
         if length(r3s) > 2
           s_ndx = nv*(x1_ndx-1) + x2_ndx;
-          con_ndx = s_ndx;
           A(con_ndx, [x1_ndx, x2_ndx, nv+s_ndx]) = [1, 1, -1];
           b(con_ndx) = 1.5;
+          con_ndx = con_ndx + 1;
           
           x3_ndxs = (c3s-1)*n + r3s;
           x3_ndxs = x3_ndxs(2:end-1);
           N = length(x3_ndxs);
-          con_ndx = ns + s_ndx;
           A(con_ndx, [nv+s_ndx, x3_ndxs']) = [N, -ones(size(x3_ndxs'))];
           b(con_ndx) = 0;
+          con_ndx = con_ndx + 1;
+%           fprintf(1, '%d and %d constrain %d\n', x1_ndx, x2_ndx, x3_ndxs);
         end
       end
     end
   end
 end
+con_ndx / size(A, 1)
 fprintf(1, 'Setup time: %f  s\n', toc);
 hulls = {};
-
+lb = zeros(nv + ns, 1);
 while true
-  lb = zeros(nv + ns, 1);
-  ub = ones(size(lb));
-  for j = 1:nv
-    if ~grid_flat(j)
-      ub(j) = 0;
-  %     Aeq(j, j) = 1;
-    end
-  end
-
-
+  ub = [double(logical(grid_flat)); ones(ns, 1)];
+  
   c = [-ones(nv, 1); zeros(ns, 1)];
-
-  % tic
-  % x = bintprog(c, A, b, Aeq, beq, x0);
-  % fprintf(1, 'bintprog solve time: %f s\n', toc);
 
   clear model params
   model.obj = c;
@@ -98,16 +92,8 @@ while true
   result = gurobi(model, params);
   fprintf(1, 'gurobi solve time: %f s\n', toc);
 
-%   xstar = result.x(1:nv);
-%   sstar = result.x(nv+1:nv+ns);
-%   sstar = reshape(sstar, nv, nv);
-%   for j = 1:nv
-%     for k = 1:nv
-%       assert(sstar(j, k) == xstar(j) * xstar(k));
-%     end
-%   end
   
-  x = reshape(result.x(1:nv), size(grid))
+  x = reshape(result.x(1:nv), size(grid));
   hulls{end+1} = x;
   grid_flat(logical(x)) = 0;
   if all(grid_flat == 0)
