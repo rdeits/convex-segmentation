@@ -28,7 +28,7 @@ function neighbors(dims::(Int64, Int64), x::Int64)
 	return ndx
 end
 
-function convex_connections(grid::Array{Bool})
+function convex_connections(grid::BitArray)
     active_set = [[n] for n in find(grid)]
     
     while true

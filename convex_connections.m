@@ -45,6 +45,6 @@ ls = cellfun(@length, active_set);
 largest_set = active_set{ndx};
 
 mask = zeros(size(grid));
-mask(largest_set) = 1
+mask(largest_set) = 1;
       
 end
