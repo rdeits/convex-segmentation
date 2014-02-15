@@ -32,7 +32,6 @@ while true
           continue
         end
         new_active_set{end+1} = [h; ni];
-        cell2mat(new_active_set);
       end
   end
   if isempty(new_active_set)
