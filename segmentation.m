@@ -32,6 +32,8 @@ while true
     [x, A, b] = convex_segmentation(grid, A, b);
   elseif strcmp(method, 'rect')
     [x, A, b] = rectangle_segmentation(grid);
+  elseif strcmp(method, 'neighbors')
+    [x] = convex_connections(grid);
   end
   hulls{end+1} = x;
   grid(logical(x)) = 0;

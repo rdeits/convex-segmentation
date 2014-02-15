@@ -1,9 +1,4 @@
-function largest_set = convex_connections()
-
-grid = [1, 0, 0, 0;
-        1, 0, 1, 0;
-        1, 1, 1, 0;
-        1, 1, 1, 1];
+function mask = convex_connections(grid)
       
 active_set = mat2cell(find(grid), ones(size(find(grid))), 1);
 % active_set = {[1]}
@@ -16,7 +11,6 @@ while true
   new_active_set = {};
   for j = 1:length(active_set)
     h = active_set{j};
-%     for k = 1:length(h)
       x = h(end);
       n = neighbors(grid,x);
       for i = 1:length(n)
@@ -38,9 +32,8 @@ while true
           continue
         end
         new_active_set{end+1} = [h; ni];
-        cell2mat(new_active_set)
+        cell2mat(new_active_set);
       end
-%     end
   end
   if isempty(new_active_set)
     break
@@ -51,5 +44,8 @@ end
 ls = cellfun(@length, active_set);
 [~, ndx] = max(ls);
 largest_set = active_set{ndx};
+
+mask = zeros(size(grid));
+mask(largest_set) = 1
       
 end
