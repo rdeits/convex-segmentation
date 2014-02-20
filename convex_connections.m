@@ -1,38 +1,40 @@
 function mask = convex_connections(grid)
-      
+
+  grid = logical(grid);
+
 active_set = mat2cell(find(grid), ones(size(find(grid))), 1);
-% active_set = {[1]}
-
-
-% TODO: I think we can sort h, and then only work on the neighbors of
-% h(end) which are greater than h(end)?
+% ndx = find(grid);
+% i0 = ndx(randi([1,length(ndx)]));
+% active_set = {{i0, i0}};
 
 while true
   new_active_set = {};
   for j = 1:length(active_set)
-    h = active_set{j};
-      x = h(end);
-      n = neighbors(grid,x);
-      for i = 1:length(n)
-        ni = n(i);
-        if ni <= x
-          continue
-        end
-        if ~grid(ni)
-          continue
-        end
-        if any(ismember(h, ni))
-          continue
-        end
-        mask = zeros(size(grid));
-        mask(h) = 1;
-        [r, c] = ind2sub(size(grid), ni);
-        ok = check_convex_addition(mask, r, c);
+    points = active_set{j};
+
+    neighborhood = zeros(size(grid));
+    for k = 1:length(points)
+      n = neighbors(grid, points(k));
+      neighborhood(n) = 1;
+    end
+    neighborhood = neighborhood - ~grid;
+    neighborhood(points) = 0;
+    new_neighbors = find(neighborhood);
+    % new_neighbors = new_neighbors(new_neighbors > points(end));
+
+      for i = 1:length(new_neighbors)
+        ni = new_neighbors(i);
+        [ok, new_points] = check_convex_addition(grid, points, ni);
+
         if ~ok
           continue
         end
-        new_active_set{end+1} = [h; ni];
+        if ~any(cellfun(@(p) all(p==new_points), new_active_set))
+          new_active_set{end+1} = new_points;
+        end
+        % end
       end
+    % end
   end
   if isempty(new_active_set)
     break
@@ -40,11 +42,12 @@ while true
   active_set = new_active_set;
 end
 
+
 ls = cellfun(@length, active_set);
 [~, ndx] = max(ls);
 largest_set = active_set{ndx};
 
 mask = zeros(size(grid));
 mask(largest_set) = 1;
-      
+
 end
