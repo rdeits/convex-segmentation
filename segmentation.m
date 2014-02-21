@@ -42,6 +42,8 @@ while true
     [x] = convex_edges(grid);
   elseif strcmp(method, 'rays')
     [x] = convex_rays(uncovered_grid, grid);
+  elseif strcmp(method, 'ellipse')
+    [x] = convex_ellipse(uncovered_grid, grid);
   end
   hulls{end+1} = x;
   grid(logical(x)) = 0;
