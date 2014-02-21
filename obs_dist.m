@@ -8,8 +8,6 @@ while true
   dists(2:end,:) = min(dists(2:end,:), dists(1:end-1,:)+1);
   dists(1:end-1,:) = min(dists(1:end-1,:), dists(2:end,:)+1);
   dists(~grid) = 0;
-  surf(dists')
-  drawnow()
   if all(all(dists == old_dists))
     break
   end
