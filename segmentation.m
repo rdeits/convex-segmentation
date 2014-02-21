@@ -45,6 +45,26 @@ while true
   if all(all(grid == 0))
     break
   end
+  if show
+    img = zeros([size(grid), 3]);
+    clf
+    cmap = colormap('jet');
+    for j = 1:length(hulls)
+      for i = 1:size(hulls{j}, 1)
+        for k = 1:size(hulls{j}, 2)
+          if hulls{j}(i, k)
+            img(i, k, :) = cmap(floor((j-1) * (size(cmap, 1) / length(hulls))+1), :);
+          end
+        end
+      end
+    end
+    clf
+    subplot(211)
+    h1 = imshow(imresize(grid_copy, 10, 'nearest'));
+    subplot(212)
+    h2 = imshow(imresize(img, 10, 'nearest'));
+    drawnow()
+  end
 end
 
 if show
