@@ -2,7 +2,7 @@ function mask = convex_edges(grid)
 
 grid = logical(grid);
 
-max_num_sides = 5;
+max_num_sides = 25;
 
 initial_offset = [0.5, 0.5, -0.5, -0.5;
                  -0.5, 0.5, 0.5, -0.5];
@@ -53,19 +53,28 @@ while true
     break
   end
   active_set = new_active_set.values();
+  areas = zeros(1,length(active_set));
+  for j = 1:length(active_set)
+    corners = active_set{j};
+    corners = [corners, corners(:,1)];
+    [A, b] = poly2lincon(new_corners(1,:), new_corners(2,:),true);
+    areas(j) = sum(all(bsxfun(@minus, A * white_squares, b) <= 0));
+  end
+  [~, ndx] = max(areas);
+  active_set = active_set(ndx);
 end
-
-areas = zeros(1,length(active_set));
-for j = 1:length(active_set)
-  corners = active_set{j};
-  xv = [corners(1,:), corners(1,1)];
-  yv = [corners(2,:), corners(2,1)];
-  IN = inpolygon(white_squares(1,:), white_squares(2,:), xv, yv);
-  areas(j) = sum(IN);
-end
-
-[~, ndx] = max(areas);
-corners = active_set{ndx};
+% 
+% areas = zeros(1,length(active_set));
+% for j = 1:length(active_set)
+%   corners = active_set{j};
+%   xv = [corners(1,:), corners(1,1)];
+%   yv = [corners(2,:), corners(2,1)];
+%   IN = inpolygon(white_squares(1,:), white_squares(2,:), xv, yv);
+%   areas(j) = sum(IN);
+% end
+% [~, ndx] = max(areas);
+% corners = active_set{ndx};
+corners = active_set{1};
 xv = [corners(1,:), corners(1,1)];
 yv = [corners(2,:), corners(2,1)];
 [R, C] = meshgrid(1:size(grid,1), 1:size(grid,2));
