@@ -35,6 +35,10 @@ while true
     [x, A, b] = rectangle_segmentation(grid);
   elseif strcmp(method, 'neighbors')
     [x] = convex_connections(grid);
+  elseif strcmp(method, 'corners')
+    [x] = convex_corners(grid);
+  elseif strcmp(method, 'edges')
+    [x] = convex_edges(grid);
   end
   hulls{end+1} = x;
   grid(logical(x)) = 0;
