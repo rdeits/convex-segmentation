@@ -5,8 +5,6 @@ grid = logical(grid);
 dists = obs_dist(seed_grid);
 [~, i0] = max(reshape(dists, [], 1));
 
-% ndx = find(seed_grid);
-% i0 = ndx(randi([1,length(ndx)]));
 [r0, c0] = ind2sub(size(grid), i0);
 active_set = {[0.5,0.5,0.5,0.5]};
 explored_set = containers.Map();
