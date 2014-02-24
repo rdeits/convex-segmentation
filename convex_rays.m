@@ -18,9 +18,15 @@ while true
   new_active_set = containers.Map();
   for j = 1:length(active_set)
     ray_lengths = active_set{j};
-    for ray_to_extend = 1:4
+    extensions = [1,0,0,0;
+                  0,1,0,0;
+                  0,0,1,0;
+                  0,0,0,1;
+                  1,1,1,1];
+    for k = 1:size(extensions,1)
       new_ray_lengths = ray_lengths;
-      new_ray_lengths(ray_to_extend) = new_ray_lengths(ray_to_extend) + 1;
+%       new_ray_lengths(ray_to_extend) = new_ray_lengths(ray_to_extend) + 1;
+      new_ray_lengths = new_ray_lengths + extensions(k,:);
       hash = sprintf('%f', new_ray_lengths);
       if isKey(explored_set, hash)
         continue
