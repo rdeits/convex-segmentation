@@ -23,7 +23,7 @@ function hulls = segmentation(grid, method, show)
 grid
 uncovered_grid = grid;
 grid_copy = grid;
-assert(size(grid,1) == size(grid,2))
+% assert(size(grid,1) == size(grid,2))
 hulls = {};
 A = [];
 b = [];
@@ -37,7 +37,7 @@ while true
   elseif strcmp(method, 'neighbors')
     [x] = convex_connections(grid);
   elseif strcmp(method, 'corners')
-    [x] = convex_corners(grid);
+    [x] = convex_corners(uncovered_grid, grid);
   elseif strcmp(method, 'edges')
     [x] = convex_edges(grid);
   elseif strcmp(method, 'rays')
