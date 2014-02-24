@@ -11,6 +11,7 @@ x0 = [r0; c0]
 
 [white_squares(1,:), white_squares(2,:)] = ind2sub(size(grid), find(grid));
 [black_squares(1,:), black_squares(2,:)] = ind2sub(size(grid), find(~grid));
+[black_edges(1,:), black_edges(2,:)] = ind2sub(size(grid), find(find_edges(~grid)));
 
 % Initialize program
 prog = spotsosprog;
@@ -45,11 +46,11 @@ sol = prog.minimize(-rho,@spot_sedumi,options);
 S_opt = double(sol.eval(S));
 rho_opt = double(sol.eval(rho));
 
-figure(2)
-clf
-plotEllipse(S_opt,rho_opt,x0,'r');
-hold on
-plot(black_squares(1,:),black_squares(2,:),'bo')
+% figure(2)
+% clf
+% plotEllipse(S_opt,rho_opt,x0,'r');
+% hold on
+% plot(black_squares(1,:),black_squares(2,:),'bo')
 figure(1)
 
 [R, C] = meshgrid(1:size(grid,1), 1:size(grid,2));
